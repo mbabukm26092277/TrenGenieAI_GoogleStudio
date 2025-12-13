@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ImageUpload } from './components/ImageUpload';
 import { SubscriptionModal } from './components/SubscriptionModal';
@@ -6,7 +7,7 @@ import { MAX_FREE_GENERATIONS, HAIR_STYLES, FASHION_STYLES, APP_NAME, HAIR_COLOR
 import { GeneratedStyle, SalonResult, ShoppingResult, AppState, GeoLocation } from './types';
 import { 
   Loader2, ChevronLeft, ChevronRight, Download, MapPin, ShoppingBag, 
-  Scissors, Shirt, Sparkles, RefreshCcw, Camera, ChevronDown, Palette, Check
+  Scissors, Shirt, Sparkles, RefreshCcw, Camera, ChevronDown, Palette, Check, AlertTriangle
 } from 'lucide-react';
 
 // Extracted ColorPicker to prevent re-renders and improve performance
@@ -80,6 +81,7 @@ const App: React.FC = () => {
   const [showPaywall, setShowPaywall] = useState<boolean>(false);
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Customization State
   const [selectedHairColor, setSelectedHairColor] = useState<string | null>(null);
@@ -122,7 +124,7 @@ const App: React.FC = () => {
 
     // Generate random suggestions
     const newSuggestions = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 3; i < 6; i++) {
       const h = HAIR_STYLES[Math.floor(Math.random() * HAIR_STYLES.length)];
       const f = FASHION_STYLES[Math.floor(Math.random() * FASHION_STYLES.length)];
       newSuggestions.push(`${h} with ${f}`);
@@ -150,6 +152,7 @@ const App: React.FC = () => {
     setHistory([initialStyle]);
     setCurrentIndex(0);
     setAppState(AppState.IDLE);
+    setErrorMessage(null);
   };
 
   const handleLoadMoreHair = async () => {
@@ -162,6 +165,10 @@ const App: React.FC = () => {
         if (newStyles && newStyles.length > 0) {
           setAvailableHairStyles(prev => [...prev, ...newStyles]);
           setVisibleHairCount(prev => prev + newStyles.length);
+        }
+      } catch (err: any) {
+        if (err.message && err.message.includes("API_KEY")) {
+             setErrorMessage("API Key is missing. Please configure it in Vercel settings.");
         }
       } finally {
         setIsLoadingMoreHair(false);
@@ -180,6 +187,10 @@ const App: React.FC = () => {
           setAvailableFashionStyles(prev => [...prev, ...newStyles]);
           setVisibleFashionCount(prev => prev + newStyles.length);
         }
+      } catch (err: any) {
+        if (err.message && err.message.includes("API_KEY")) {
+             setErrorMessage("API Key is missing. Please configure it in Vercel settings.");
+        }
       } finally {
         setIsLoadingMoreFashion(false);
       }
@@ -195,6 +206,7 @@ const App: React.FC = () => {
     if (!originalImage && type !== 'mix') return;
 
     setAppState(AppState.GENERATING);
+    setErrorMessage(null);
     setSalons([]);
     setShoppingLinks([]);
 
@@ -243,10 +255,17 @@ const App: React.FC = () => {
       }
 
       setAppState(AppState.COMPLETE);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setAppState(AppState.ERROR);
-      setTimeout(() => setAppState(AppState.IDLE), 3000);
+      if (error.message && error.message.includes("API_KEY")) {
+        setErrorMessage("API Key is missing. Please check your deployment settings.");
+      } else {
+        setErrorMessage("Failed to generate style. Please try again.");
+      }
+      setTimeout(() => {
+          if (appState === AppState.ERROR) setAppState(AppState.IDLE);
+      }, 5000);
     }
   };
 
@@ -278,6 +297,7 @@ const App: React.FC = () => {
     setSelectedHairColor(null);
     setSelectedTopColor(null);
     setSelectedBottomColor(null);
+    setErrorMessage(null);
   };
 
   const currentStyle = history[currentIndex];
@@ -300,6 +320,17 @@ const App: React.FC = () => {
           </div>
         </div>
       </header>
+      
+      {/* Error Toast */}
+      {errorMessage && (
+        <div className="fixed top-20 left-0 right-0 z-50 flex justify-center px-4 animate-in slide-in-from-top-4 fade-in">
+            <div className="bg-red-500/90 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 backdrop-blur-sm">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">{errorMessage}</span>
+                <button onClick={() => setErrorMessage(null)} className="ml-2 opacity-80 hover:opacity-100">✕</button>
+            </div>
+        </div>
+      )}
 
       <main className="max-w-6xl mx-auto px-4 py-8 pb-32">
         {!originalImage ? (

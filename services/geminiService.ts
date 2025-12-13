@@ -1,9 +1,16 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeoLocation, SalonResult, ShoppingResult } from "../types";
 import { SAFETY_INSTRUCTION } from "../constants";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to safely get the AI client or throw if key is missing
+const getAiClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API_KEY is missing. Please set it in your environment variables.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 /**
  * Encodes a base64 string from a Blob/File
@@ -31,6 +38,7 @@ export const generateStyleImage = async (
   mimeType: string = 'image/jpeg'
 ): Promise<string> => {
   try {
+    const ai = getAiClient();
     const fullPrompt = `${promptText}. ${SAFETY_INSTRUCTION}. High quality, photorealistic.`;
     
     // Using gemini-2.5-flash-image for image editing capabilities
@@ -76,6 +84,7 @@ export const findNearbySalons = async (
   hairStyleDescription: string
 ): Promise<SalonResult[]> => {
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Find 3 highly rated hair salons near me that specialize in ${hairStyleDescription}. Provide links.`,
@@ -118,6 +127,7 @@ export const findShoppingLinks = async (
   fashionDescription: string
 ): Promise<ShoppingResult[]> => {
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Find 3 online stores where I can buy a ${fashionDescription}. Provide direct product search links.`,
@@ -152,6 +162,7 @@ export const getMoreStyleSuggestions = async (
   type: 'hair' | 'fashion'
 ): Promise<string[]> => {
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Suggest 4 new, trendy, and distinct ${type} styles that are NOT in this list: ${currentStyles.join(', ')}. Return only the names.`,
