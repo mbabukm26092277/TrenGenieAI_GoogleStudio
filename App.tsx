@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {ImageUpload } from "./components/ImageUpload";
-//import { ImageUpload } from './components/ImageUpload';
-//import { ImageUpload } from "./components/ImageUpload";
-//import { ImageUpload } from "@/components/ImageUpload";
-import SubscriptionModal from './components/SubscriptionModal';
+import { ImageUpload } from './components/ImageUpload';
+import { SubscriptionModal } from './components/SubscriptionModal';
 import { generateStyleImage, findNearbySalons, findShoppingLinks, getMoreStyleSuggestions } from './services/geminiService';
 import { MAX_FREE_GENERATIONS, HAIR_STYLES, FASHION_STYLES, APP_NAME, HAIR_COLORS, CLOTHING_COLORS } from './constants';
 import { GeneratedStyle, SalonResult, ShoppingResult, AppState, GeoLocation } from './types';
@@ -287,7 +284,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-brand-500 selection:text-white">
-      {React.createElement(SubscriptionModal as unknown as React.ComponentType<any>, { isOpen: showPaywall, onSubscribe: handleSubscribe })}
+      <SubscriptionModal isOpen={showPaywall} onSubscribe={handleSubscribe} />
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-700">
