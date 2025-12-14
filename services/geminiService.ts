@@ -6,6 +6,7 @@ import { SAFETY_INSTRUCTION } from "../constants";
 // Helper to safely get the AI client or throw if key is missing
 const getAiClient = () => {
   const apiKey = process.env.API_KEY;
+
   if (!apiKey) {
     throw new Error("API_KEY is missing. Please set it in your environment variables.");
   }
